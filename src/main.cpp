@@ -80,9 +80,14 @@ class DIsplay
 {
 public:
 
+    DIsplay()
+    {
+
+    }
+
     typedef struct
     {
-        enum stavENUM
+        enum stavENUM : int
         {
             prazdna, 
             plna,
@@ -90,23 +95,76 @@ public:
         };
     } stav; 
 
-    stav policka[Sx][Sy];
+
+    
+    int policka[Sx][Sy] = {0};
 };
 
+class LOde
+{
+public:
+    struct lod
+    {
+        enum typ
+        {
+            mala, 
+            velka, 
+            ponorka,
+            kriznik
+        };
+        bool zasah = false;
+        int rotation = 0;
+    };
 
+    int malaLEN = 2;
+    int velkaLEN = 4;
+
+    bool MALA[2]
+    {
+        true, true,
+    };
+
+
+
+
+
+};
 
 void logicMain()
  {
+    DIsplay dis;
 
-    //while(true)
-    //{
- 
-        display.at(0, 0) = Rgb(255, 0, 0);
-        display.show(30);
-        delay(3000);
+    LOde::lod NaselodeTYPY[3];
+
+    for(int y = 0; y < Sy; y ++)
+    {
+        for(int x = 0; x < Sx; x++)
+        {
+            //if(x == 0 || y == 0 || x == 9 || y == 9)
+            //{
+                dis.policka[x][y] = DIsplay::stav::plna;
+            //}
+        }
+    }
+
+    while(true)
+    {
+        for(int y = 0; y < Sy; y++)
+        {
+            for(int x = 0; x < Sx; x++)
+            {
+                if(dis.policka[x][y] == DIsplay::stav::plna)
+                {
+                    display.at(x, y) = Rgb(100, 25, 100);
+                }
+            }
+        }
+
+        display.show(10);
+        delay(100);
         display.clear();
 
-    //}
+    }
 
    // display.clear();
     
