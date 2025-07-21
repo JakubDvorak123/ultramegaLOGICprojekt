@@ -10,6 +10,8 @@ int main()
 	
 	cout<<"ahoj ahoj"<<endl;
 	cout<<"ahoj ahoj 2"<<endl;
+	
+	cint.get();
 
 	return 0;
 }
