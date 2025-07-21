@@ -12,9 +12,9 @@ int main()
 	cout<<"ahoj ahoj 2"<<endl;
 	
 <<<<<<< HEAD
-	//cout<<"tady neni cin"<<endl;
+	cout<<"tady neni cin"<<endl;
 =======
-	cint.get();
+	//cint.get();
 >>>>>>> odbocka
 
 	return 0;
