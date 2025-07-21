@@ -11,11 +11,11 @@ int main()
 	cout<<"ahoj ahoj"<<endl;
 	cout<<"ahoj ahoj 2"<<endl;
 	
-<<<<<<< HEAD
-	cout<<"tady neni cin"<<endl;
-=======
-	//cint.get();
->>>>>>> odbocka
 
+	cout<<"tady neni cin"<<endl;
+	//cint.get();
+
+	cin.get();
+	cin.get();
 	return 0;
 }
