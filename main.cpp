@@ -10,6 +10,8 @@ int main()
 	
 	cout<<"ahoj ahoj"<<endl;
 	cout<<"ahoj ahoj 2"<<endl;
+	
+	cout<<"tady neni cin"<<endl;
 
 	return 0;
 }
