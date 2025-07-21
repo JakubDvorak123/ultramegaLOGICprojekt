@@ -1,1 +1,0 @@
-poznamka 1
