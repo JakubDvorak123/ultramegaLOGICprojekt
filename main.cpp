@@ -11,7 +11,7 @@ int main()
 	cout<<"ahoj ahoj"<<endl;
 	cout<<"ahoj ahoj 2"<<endl;
 	
-	cint.get();
-
+	cin.get();
+	cin.get();
 	return 0;
 }
