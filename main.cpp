@@ -9,6 +9,7 @@ int main()
 	cout<<"hello word 2 ahoj"<<endl;
 	
 	cout<<"ahoj ahoj"<<endl;
+	cout<<"ahoj ahoj 2"<<endl;
 
 	return 0;
 }
