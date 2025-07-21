@@ -7,6 +7,8 @@ int main()
 	cout<<"vector>>" << 10 << ", " << 15<<endl;
 	cout<<<"hello world"<<endl;
 	cout<<"hello word 2 ahoj"<<endl;
+	
+	cout<<"ahoj ahoj"<<endl;
 
 	return 0;
 }
