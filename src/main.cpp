@@ -1,111 +1,23 @@
 #include "Logic.hpp"
-#include <iostream>
-
+#include "lib.h"
 using namespace std;
-#define Sx 10
-#define Sy 10
-
-typedef unsigned short int USint;
-
-struct vec2
-{
-    USint x, y;
-};
-
-class DIsplay
-{
-public:
-
-    DIsplay()
-    {
-
-    }
-
-    typedef struct
-    {
-        enum stavENUM : int
-        {
-            prazdna, 
-            plna,
-            zasazena, 
-        };
-    } stav; 
-
-
-    
-    int policka[Sx][Sy] = {0};
-};
-
-class LOde
-{
-public:
-    struct lod
-    {
-        enum typ
-        {
-            mala, 
-            velka, 
-            ponorka,
-            kriznik
-        };
-        bool zasah = false;
-        int rotation = 0;
-    };
-
-    int malaLEN = 2;
-    int velkaLEN = 4;
-    int ponorkaLENx = 4;
-    int ponorkaLENy = 2;
-    int kriznikLENx = 4;
-    int kriznikLENy = 4;
-
-    bool MALA[2]
-    {
-        true, true,
-    };
-
-    bool VELKA[4]
-    {
-        true, true, true, true
-    };
-
-    bool PONORKA[4][2]
-    {
-        false, true, false, false,
-        true,  true, true,  true,
-    };
-
-    bool KRIZNIK[4][2]
-    {
-        false, true, true, true,
-        true,  true, true, true,
-    };
-
-
-};
-
 
 void logicMain()
  {
-    DIsplay dis;
+    //int lodeNUM = 3;
+    LOde lode;
 
-    int lodeNUM = 3;
-    LOde::lod NaselodeTYPY[lodeNUM];
+    lode.pridejLOD(1, 2, LOde::lod::mala);
+    lode.pridejLOD(5, 2, LOde::lod::mala);
+    lode.pridejLOD(5, 4, LOde::lod::velka);
+    lode.pridejLOD(3, 6, LOde::lod::ponorka);
+    lode.pridejLOD(6, 8, LOde::lod::kriznik);
 
-    for(int i = 0 ; i < lodeNUM; i++)
+    cout << "lode num>>" << lode.GETlodeNUM() << endl;
+
+    for (int i = 0 ; i < lode.GETlodeNUM(); i++)
     {
-
-    }
-
-    for(int y = 0; y < Sy; y ++)
-    {
-        for(int x = 0; x < Sx; x++)
-        {
-            //if(x == 0 || y == 0 || x == 9 || y == 9)
-            //{
-                dis.policka[x][y] = DIsplay::stav::plna;
-            //}
-        }
+        lode.assignLOD(i);
     }
 
     while(true)
@@ -116,7 +28,22 @@ void logicMain()
             {
                 if(dis.policka[x][y] == DIsplay::stav::plna)
                 {
-                    display.at(x, y) = Rgb(100, 25, 100);
+                    if(dis.lodbarva[x][y] == 1)
+                    {
+                        display.at(x, y) = Rgb(100, 0, 0);
+                    }
+                    if(dis.lodbarva[x][y] == 2)
+                    {
+                        display.at(x, y) = Rgb(0, 100, 0);
+                    }
+                    if(dis.lodbarva[x][y] == 3)
+                    {
+                        display.at(x, y) = Rgb(0, 0, 100);
+                    }
+                    if(dis.lodbarva[x][y] == 4)
+                    {
+                        display.at(x, y) = Rgb(100, 100, 0);
+                    }
                 }
             }
         }
