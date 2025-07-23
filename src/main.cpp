@@ -7,7 +7,6 @@
 #include "esp_netif.h"
 #include "esp_timer.h"
 #include "nvs_flash.h"
-#include "esp_http_server.h"
 #include "lwip/err.h"
 #include "lwip/sockets.h"
 #include "lwip/sys.h"
@@ -19,9 +18,7 @@
 #define WIFI_SSID "ChataULesa"
 #define WIFI_PASS "ulesa529"
 #define WIFI_MAXIMUM_RETRY 5
-#define SERVER_PORT 80
 #define BROADCAST_PORT 3333
-#define DISCOVERY_PORT 3334
 
 static const char *TAG = "wifi_logic";
 static EventGroupHandle_t s_wifi_event_group;
@@ -30,8 +27,6 @@ static EventGroupHandle_t s_wifi_event_group;
 
 static int s_retry_num = 0;
 static esp_ip4_addr_t s_ip_addr;
-static esp_ip4_addr_t e_ip_addr;
-static httpd_handle_t server = NULL;
 static TaskHandle_t broadcast_task_handle = NULL;
 static TaskHandle_t discovery_task_handle = NULL;
 
@@ -40,7 +35,6 @@ typedef struct {
     char device_name[32];
     char device_type[16];
     uint32_t ip_address;
-    uint16_t http_port;
     uint32_t uptime_ms;
 } device_info_t;
 
@@ -55,7 +49,6 @@ static void broadcast_task(void *pvParameters)
     snprintf(device_info.device_name, sizeof(device_info.device_name), "ESP32-Logic-%08X", (unsigned int)esp_random());
     strcpy(device_info.device_type, "Logic_Board");
     device_info.ip_address = s_ip_addr.addr;
-    device_info.http_port = SERVER_PORT;
     
     while (1) {
         // Vytvoreni UDP socketu
@@ -149,9 +142,7 @@ static void discovery_task(void *pvParameters)
                     printf("Nazev: %s\n", received_info.device_name);
                     printf("Typ: %s\n", received_info.device_type);
                     printf("IP: %s\n", inet_ntoa(addr));
-                    printf("HTTP port: %d\n", received_info.http_port);
                     printf("Uptime: %lu ms\n", received_info.uptime_ms);
-                    printf("URL: http://%s:%d\n", inet_ntoa(addr), received_info.http_port);
                     printf("=============================\n");
                 }
             } else if (len < 0) {
@@ -175,130 +166,6 @@ static void start_device_discovery(void)
     xTaskCreate(discovery_task, "discovery_task", 4096, NULL, 5, &discovery_task_handle);
     
     printf("Device discovery system spusten\n");
-}
-
-// HTTP handler pro hlavni stranku
-static esp_err_t hello_get_handler(httpd_req_t *req)
-{
-    char resp_str[512];
-    snprintf(resp_str, sizeof(resp_str),
-        "<html><body>"
-        "<h1>ESP32 Logic Board Server</h1>"
-        "<p>IP adresa: " IPSTR "</p>"
-        "<p>Port: %d</p>"
-        "<p>Program bezi uspesne!</p>"
-        "<p><a href='/info'>Zobrazit informace o systemu</a></p>"
-        "<p><a href='/devices'>Objevena zarizeni</a></p>"
-        "<p><strong>Device Discovery:</strong> Toto zarizeni automaticky vysilá broadcast zpravy a naslouchá ostatnim zarizenım na síti.</p>"
-        "</body></html>",
-        IP2STR(&s_ip_addr), SERVER_PORT);
-    
-    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-// HTTP handler pro systemove informace
-static esp_err_t info_get_handler(httpd_req_t *req)
-{
-    char resp_str[1024];
-    snprintf(resp_str, sizeof(resp_str),
-        "<html>"
-        "<head><title>Systemove informace</title>"
-        "<script src=\"https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4\"></script>"
-        "</head>"
-        "<body>"
-        "<h1>Systemove informace</h1>"
-        "<p>IP adresa: " IPSTR "</p>"
-        "<p>Free heap: %lu bytes</p>"
-        "<p>Uptime: %lld ms</p>"
-        "<p>WiFi SSID: %s</p>"
-        "<p><a href='/'>Zpet na hlavni stranku</a></p>"
-        "</body></html>",
-        IP2STR(&s_ip_addr),
-        esp_get_free_heap_size(),
-        esp_timer_get_time() / 1000,
-        WIFI_SSID);
-    
-    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-// HTTP handler pro stranku s objevenymi zarizeni
-static esp_err_t devices_get_handler(httpd_req_t *req)
-{
-    char resp_str[1024];
-    snprintf(resp_str, sizeof(resp_str),
-        "<html>"
-        "<head><title>Objevena zarizeni</title></head>"
-        "<body>"
-        "<h1>Device Discovery</h1>"
-        "<p>Toto zarizeni automaticky vysilá broadcast zpravy kazdych 10 sekund na portu %d</p>"
-        "<p>Sledujte serial monitor pro informace o objevenych zarizenich.</p>"
-        "<p><strong>Jak to funguje:</strong></p>"
-        "<ul>"
-        "<li>Kazdé ESP32 zarizeni vysilá broadcast zpravy se svymi informacemi</li>"
-        "<li>Ostatni zarizeni tyto zpravy prijimaji a zobrazuji v serial monitoru</li>"
-        "<li>Automaticky se objevuji nova zarizeni na síti</li>"
-        "</ul>"
-        "<p><a href='/'>Zpet na hlavni stranku</a></p>"
-        "<p><a href='/info'>Systemove informace</a></p>"
-        "<script>"
-        "setTimeout(function(){ location.reload(); }, 5000);"  // Auto refresh kazdych 5 sekund
-        "</script>"
-        "</body></html>",
-        BROADCAST_PORT);
-    
-    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
-    return ESP_OK;
-}
-
-// Konfigurace HTTP endpoints
-static const httpd_uri_t hello = {
-    .uri       = "/",
-    .method    = HTTP_GET,
-    .handler   = hello_get_handler,
-    .user_ctx  = NULL
-};
-
-static const httpd_uri_t info = {
-    .uri       = "/info",
-    .method    = HTTP_GET,
-    .handler   = info_get_handler,
-    .user_ctx  = NULL
-};
-
-static const httpd_uri_t devices = {
-    .uri       = "/devices",
-    .method    = HTTP_GET,
-    .handler   = devices_get_handler,
-    .user_ctx  = NULL
-};
-
-// Spusteni HTTP serveru
-static httpd_handle_t start_webserver(void)
-{
-    httpd_handle_t server = NULL;
-    httpd_config_t config = HTTPD_DEFAULT_CONFIG();
-    config.server_port = SERVER_PORT;
-    config.lru_purge_enable = true;
-
-    printf("Spoustim HTTP server na portu %d\n", config.server_port);
-    if (httpd_start(&server, &config) == ESP_OK) {
-        printf("HTTP server uspesne spusten\n");
-        httpd_register_uri_handler(server, &hello);
-        httpd_register_uri_handler(server, &info);
-        httpd_register_uri_handler(server, &devices);
-        return server;
-    }
-
-    printf("Chyba pri spousteni HTTP serveru!\n");
-    return NULL;
-}
-
-// Zastaveni HTTP serveru
-static esp_err_t stop_webserver(httpd_handle_t server)
-{
-    return httpd_stop(server);
 }
 
 static void event_handler(void *arg, esp_event_base_t event_base,
@@ -329,13 +196,6 @@ static void event_handler(void *arg, esp_event_base_t event_base,
         
         // Ulozit IP adresu pro pouziti v HTTP serveru
         s_ip_addr = event->ip_info.ip;
-        
-        // Spustit HTTP server
-        server = start_webserver();
-        if (server) {
-            printf("HTTP server dostupny na: http://" IPSTR ":%d\n", 
-                   IP2STR(&s_ip_addr), SERVER_PORT);
-        }
         
         // Spustit device discovery system
         start_device_discovery();
@@ -393,10 +253,7 @@ void wifi_init_sta(void)
     {
         printf("Uspesne pripojeno k WiFi SSID:%s\n", WIFI_SSID);
         printf("Lokalni IP adresa: " IPSTR "\n", IP2STR(&s_ip_addr));
-        printf("HTTP server bezi na portu: %d\n", SERVER_PORT);
-        printf("Pristup pres webovy prohlizec: http://" IPSTR ":%d\n", 
-               IP2STR(&s_ip_addr), SERVER_PORT);
-
+        printf("Device discovery system spusten na portu: %d\n", BROADCAST_PORT);
     }
     else if (bits & WIFI_FAIL_BIT)
     {
@@ -425,16 +282,11 @@ void logicMain()
     // Inicializace WiFi
     wifi_init_sta();
 
-
     // Hlavni smycka programu
     while (true)
     {
-        if (server) {
-            printf("HTTP server bezi na http://" IPSTR ":%d - Free heap: %lu bytes\n", 
-                   IP2STR(&s_ip_addr), SERVER_PORT, esp_get_free_heap_size());
-        } else {
-            printf("WiFi program bezi (bez HTTP serveru)...\n");
-        }
+        printf("Device discovery system bezi na IP " IPSTR " - Free heap: %lu bytes\n", 
+               IP2STR(&s_ip_addr), esp_get_free_heap_size());
         vTaskDelay(pdMS_TO_TICKS(10000)); // Cekani 10 sekund
     }
 }
