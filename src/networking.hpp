@@ -37,6 +37,14 @@ static int discovery_attempts = 0;
 // Forward declarations
 static void listening_task(void *pvParameters);
 
+struct main_data
+{
+    esp_ip4_addr_t s_ip_addr;  // Lokální IP adresa
+    esp_ip4_addr_t enemy_ip_addr;  // IP adresa partnera
+    bool is_master;  // true pokud jsme master, false pokud jsme slave
+};
+
+
 // Struktura pro zpravy mezi zarizeni
 typedef struct {
     char device_name[32];
@@ -330,8 +338,9 @@ void wifi_init_sta(void)
     }
 }
 
-void logicMain()
+main_data pair_esp()
 {
+    main_data data;
     printf("Spoustim WiFi program...\n");
 
     // Inicializace NVS (povinne pro WiFi)
@@ -347,21 +356,17 @@ void logicMain()
     // Inicializace WiFi
     wifi_init_sta();
 
-    // Hlavni smycka programu
-    while (true)
-    {
-        if (connection_established) {
-            if (is_master) {
-                printf("MASTER mode - Partner IP: " IPSTR " - Free heap: %lu bytes\n", 
-                       IP2STR(&enemy_ip_addr), esp_get_free_heap_size());
-            } else {
-                printf("SLAVE mode - Master IP: " IPSTR " - Free heap: %lu bytes\n", 
-                       IP2STR(&enemy_ip_addr), esp_get_free_heap_size());
-            }
-        } else {
-            printf("Discovery system bezi na IP " IPSTR " - Free heap: %lu bytes\n", 
-                   IP2STR(&s_ip_addr), esp_get_free_heap_size());
-        }
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Cekani 10 sekund
+    // Cekat na dokonceni parovani
+    printf("Cekam na dokonceni parovani...\n");
+    while (!connection_established) {
+        vTaskDelay(pdMS_TO_TICKS(100));  // Cekat 100ms mezi kontrolami
     }
+    
+    printf("Parovani dokonceno!\n");
+    
+    data.s_ip_addr = s_ip_addr;
+    data.enemy_ip_addr = enemy_ip_addr;
+    data.is_master = is_master;
+
+    return data;
 }
