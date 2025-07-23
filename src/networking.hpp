@@ -32,8 +32,6 @@ static TaskHandle_t broadcast_task_handle = NULL;
 static TaskHandle_t discovery_task_handle = NULL;
 static bool is_master = false;
 static bool connection_established = false;
-static int discovery_attempts = 0;
-
 // Forward declarations
 static void listening_task(void *pvParameters);
 
