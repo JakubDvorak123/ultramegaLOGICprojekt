@@ -27,8 +27,15 @@ static EventGroupHandle_t s_wifi_event_group;
 
 static int s_retry_num = 0;
 static esp_ip4_addr_t s_ip_addr;
+static esp_ip4_addr_t enemy_ip_addr;
 static TaskHandle_t broadcast_task_handle = NULL;
 static TaskHandle_t discovery_task_handle = NULL;
+static bool is_master = false;
+static bool connection_established = false;
+static int discovery_attempts = 0;
+
+// Forward declarations
+static void listening_task(void *pvParameters);
 
 // Struktura pro zpravy mezi zarizeni
 typedef struct {
@@ -36,37 +43,52 @@ typedef struct {
     char device_type[16];
     uint32_t ip_address;
     uint32_t uptime_ms;
+    bool is_response;  // true pokud je to odpoved na discovery
 } device_info_t;
 
-// Task pro posilani broadcast zprav (oznamuje pritomnost tohoto zarizeni)
-static void broadcast_task(void *pvParameters)
+// Task pro initial discovery - posle 5 broadcast zprav a ceka na odpoved
+static void initial_discovery_task(void *pvParameters)
 {
     int sock;
-    struct sockaddr_in dest_addr;
-    device_info_t device_info;
+    struct sockaddr_in dest_addr, listen_addr, source_addr;
+    socklen_t socklen = sizeof(source_addr);
+    device_info_t device_info, received_info;
     
     // Priprava informaci o zarizeni
     snprintf(device_info.device_name, sizeof(device_info.device_name), "ESP32-Logic-%08X", (unsigned int)esp_random());
     strcpy(device_info.device_type, "Logic_Board");
     device_info.ip_address = s_ip_addr.addr;
+    device_info.is_response = false;  // Toto je discovery zprava
     
-    while (1) {
-        // Vytvoreni UDP socketu
+    printf("=== INITIAL DISCOVERY - Hledam jine ESP32 ===\n");
+    
+    // Pokus o 5 broadcast zprav
+    for (int attempt = 0; attempt < 5; attempt++) {
+        printf("Discovery pokus %d/5\n", attempt + 1);
+        
+        // Vytvoreni UDP socketu pro broadcast
         sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
         if (sock < 0) {
-            printf("Nelze vytvorit broadcast socket\n");
-            vTaskDelay(pdMS_TO_TICKS(5000));
+            printf("Nelze vytvorit discovery socket\n");
+            vTaskDelay(pdMS_TO_TICKS(1000));
             continue;
         }
         
         // Povoleni broadcast
         int broadcast_enable = 1;
-        if (setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable)) < 0) {
-            printf("Nelze povolit broadcast\n");
-            close(sock);
-            vTaskDelay(pdMS_TO_TICKS(5000));
-            continue;
-        }
+        setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast_enable, sizeof(broadcast_enable));
+        
+        // Nastavit timeout pro receive
+        struct timeval timeout;
+        timeout.tv_sec = 2;  // 2 sekundy timeout
+        timeout.tv_usec = 0;
+        setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+        
+        // Bind pro naslouchani odpovedi
+        listen_addr.sin_family = AF_INET;
+        listen_addr.sin_port = htons(BROADCAST_PORT);
+        listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+        bind(sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr));
         
         // Nastaveni broadcast adresy
         dest_addr.sin_family = AF_INET;
@@ -76,39 +98,74 @@ static void broadcast_task(void *pvParameters)
         // Aktualizace uptime
         device_info.uptime_ms = esp_timer_get_time() / 1000;
         
-        // Odeslani broadcast zpravy
+        // Odeslani discovery zpravy
         int err = sendto(sock, &device_info, sizeof(device_info), 0, 
                         (struct sockaddr *)&dest_addr, sizeof(dest_addr));
-        if (err < 0) {
-            printf("Chyba pri odesilani broadcast zpravy\n");
-        } else {
-            printf("Broadcast zprava odeslana: %s na IP " IPSTR "\n", 
-                   device_info.device_name, IP2STR(&s_ip_addr));
+        
+        if (err >= 0) {
+            printf("Discovery zprava odeslana, cekam na odpoved...\n");
+            
+            // Cekat na odpoved
+            int len = recvfrom(sock, &received_info, sizeof(received_info), 0,
+                              (struct sockaddr *)&source_addr, &socklen);
+            
+            if (len > 0 && received_info.ip_address != s_ip_addr.addr && received_info.is_response) {
+                // Dostali jsme odpoved od jineho ESP32!
+                enemy_ip_addr.addr = received_info.ip_address;
+                is_master = true;
+                connection_established = true;
+                
+                printf("=== USPECH! NALEZEN PARTNER ===\n");
+                printf("Jsem MASTER\n");
+                printf("Partner IP: " IPSTR "\n", IP2STR(&enemy_ip_addr));
+                printf("Partner: %s\n", received_info.device_name);
+                printf("===============================\n");
+                
+                close(sock);
+                vTaskDelete(NULL);  // Ukoncit tento task
+                return;
+            }
         }
         
         close(sock);
-        vTaskDelay(pdMS_TO_TICKS(10000)); // Odesilat kazdych 10 sekund
+        vTaskDelay(pdMS_TO_TICKS(1000));  // Cekat 1 sekundu mezi pokusy
     }
+    
+    // Zadna odpoved po 5 pokusech - stanem se slave (listener)
+    printf("=== ZADNA ODPOVED - STANEM SE SLAVE ===\n");
+    is_master = false;
+    
+    // Spustit listening task
+    xTaskCreate(listening_task, "listening_task", 4096, NULL, 5, &discovery_task_handle);
+    
+    vTaskDelete(NULL);  // Ukoncit tento task
 }
 
-// Task pro naslouchani broadcast zpram (objevuje ostatni zarizeni)
-static void discovery_task(void *pvParameters)
+// Task pro naslouchani jako slave - ceka na discovery zpravy a odpovida
+static void listening_task(void *pvParameters)
 {
     int sock;
     struct sockaddr_in listen_addr, source_addr;
     socklen_t socklen = sizeof(source_addr);
-    device_info_t received_info;
+    device_info_t received_info, response_info;
     
-    while (1) {
+    printf("=== SLAVE MODE - Nasloucham discovery zpravám ===\n");
+    
+    // Priprava response informaci
+    snprintf(response_info.device_name, sizeof(response_info.device_name), "ESP32-Logic-%08X", (unsigned int)esp_random());
+    strcpy(response_info.device_type, "Logic_Board");
+    response_info.ip_address = s_ip_addr.addr;
+    response_info.is_response = true;  // Toto je odpoved
+    
+    while (!connection_established) {
         // Vytvoreni UDP socketu pro naslouchani
         sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
         if (sock < 0) {
-            printf("Nelze vytvorit discovery socket\n");
+            printf("Nelze vytvorit listening socket\n");
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
         
-        // Povoleni znovu pouziti adresy
         int reuse = 1;
         setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &reuse, sizeof(reuse));
         
@@ -117,55 +174,63 @@ static void discovery_task(void *pvParameters)
         listen_addr.sin_port = htons(BROADCAST_PORT);
         listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
         
-        // Bind socket
         if (bind(sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr)) < 0) {
-            printf("Nelze bind discovery socket\n");
+            printf("Nelze bind listening socket\n");
             close(sock);
             vTaskDelay(pdMS_TO_TICKS(5000));
             continue;
         }
         
-        printf("Nasloucham broadcast zpravám na portu %d\n", BROADCAST_PORT);
+        printf("Slave naslouchá na portu %d\n", BROADCAST_PORT);
         
-        while (1) {
-            // Prijmout zpravy od ostatnich zarizeni
+        while (!connection_established) {
+            // Prijmout zpravy od master zarizeni
             int len = recvfrom(sock, &received_info, sizeof(received_info), 0,
                               (struct sockaddr *)&source_addr, &socklen);
             
-            if (len > 0) {
-                // Ignorovat zpravy od sebe sama
-                if (received_info.ip_address != s_ip_addr.addr) {
-                    struct in_addr addr;
-                    addr.s_addr = received_info.ip_address;
-                    
-                    printf("=== OBJEVENO NOVE ZARIZENI ===\n");
-                    printf("Nazev: %s\n", received_info.device_name);
-                    printf("Typ: %s\n", received_info.device_type);
-                    printf("IP: %s\n", inet_ntoa(addr));
-                    printf("Uptime: %lu ms\n", received_info.uptime_ms);
-                    printf("=============================\n");
+            if (len > 0 && received_info.ip_address != s_ip_addr.addr && !received_info.is_response) {
+                // Dostali jsme discovery zpravu od jineho ESP32!
+                enemy_ip_addr.addr = received_info.ip_address;
+                connection_established = true;
+                
+                printf("=== DISCOVERY ZPRAVA PRIJATA ===\n");
+                printf("Jsem SLAVE\n");
+                printf("Master IP: " IPSTR "\n", IP2STR(&enemy_ip_addr));
+                printf("Master: %s\n", received_info.device_name);
+                
+                // Poslat odpoved zpet
+                response_info.uptime_ms = esp_timer_get_time() / 1000;
+                
+                int err = sendto(sock, &response_info, sizeof(response_info), 0,
+                                (struct sockaddr *)&source_addr, socklen);
+                
+                if (err >= 0) {
+                    printf("Odpoved odeslana zpet k master\n");
+                } else {
+                    printf("Chyba pri odesilani odpovedi\n");
                 }
-            } else if (len < 0) {
-                printf("Chyba pri prijimani broadcast zpravy\n");
+                
+                printf("=============================\n");
                 break;
             }
         }
         
         close(sock);
-        vTaskDelay(pdMS_TO_TICKS(1000));
     }
+    
+    printf("Slave ukoncuje naslouchani - spojeni navazano\n");
+    vTaskDelete(NULL);  // Ukoncit tento task
 }
 
 // Spusteni discovery systemu
 static void start_device_discovery(void)
 {
-    // Spustit task pro odesilani broadcast zprav
-    xTaskCreate(broadcast_task, "broadcast_task", 4096, NULL, 5, &broadcast_task_handle);
+    printf("=== SPOUSTIM DEVICE DISCOVERY SYSTEM ===\n");
     
-    // Spustit task pro naslouchani broadcast zpravám
-    xTaskCreate(discovery_task, "discovery_task", 4096, NULL, 5, &discovery_task_handle);
+    // Spustit initial discovery task
+    xTaskCreate(initial_discovery_task, "initial_discovery", 4096, NULL, 5, &broadcast_task_handle);
     
-    printf("Device discovery system spusten\n");
+    printf("Initial discovery task spusten\n");
 }
 
 static void event_handler(void *arg, esp_event_base_t event_base,
@@ -285,8 +350,18 @@ void logicMain()
     // Hlavni smycka programu
     while (true)
     {
-        printf("Device discovery system bezi na IP " IPSTR " - Free heap: %lu bytes\n", 
-               IP2STR(&s_ip_addr), esp_get_free_heap_size());
+        if (connection_established) {
+            if (is_master) {
+                printf("MASTER mode - Partner IP: " IPSTR " - Free heap: %lu bytes\n", 
+                       IP2STR(&enemy_ip_addr), esp_get_free_heap_size());
+            } else {
+                printf("SLAVE mode - Master IP: " IPSTR " - Free heap: %lu bytes\n", 
+                       IP2STR(&enemy_ip_addr), esp_get_free_heap_size());
+            }
+        } else {
+            printf("Discovery system bezi na IP " IPSTR " - Free heap: %lu bytes\n", 
+                   IP2STR(&s_ip_addr), esp_get_free_heap_size());
+        }
         vTaskDelay(pdMS_TO_TICKS(10000)); // Cekani 10 sekund
     }
 }
