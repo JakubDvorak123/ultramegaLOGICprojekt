@@ -9,14 +9,10 @@ using namespace std;
 
 #define Sx 10
 #define Sy 10
-<<<<<<< HEAD
 #define malaNUM 3
 #define velkaNUM 2
 #define ponorkaNUM 1
 #define kriznikNUM 1
-
-=======
->>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
 
 typedef unsigned short int USint;
 
@@ -24,7 +20,6 @@ struct vec2
 {
     USint x, y;
 };
-
 
 class DIsplay
 {
@@ -72,11 +67,7 @@ public:
     int ponorkaLENx = 4;
     int ponorkaLENy = 2;
     int kriznikLENx = 4;
-<<<<<<< HEAD
     int kriznikLENy = 2;
-=======
->>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
-    int kriznikLENy = 4;
 
     bool PONORKA[2][4]
     {
@@ -97,15 +88,12 @@ public:
         lodex.push_back(x);
     }
     int GETlodeNUM( void ) const { return LodeProImplemntaci_NAdisplay.size(); }
-<<<<<<< HEAD
     void ResetLODE()
     {
         LodeProImplemntaci_NAdisplay.clear();
         lodex.clear();
         lodey.clear();
     }
-=======
->>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
     bool assignLOD(int ID)
     {
         for(int y = 0; y < Sy; y++)
@@ -173,19 +161,11 @@ public:
         return false;
     }
 
-<<<<<<< HEAD
     void Render();
 
-=======
->>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
 private:
     vector<int> LodeProImplemntaci_NAdisplay;
     vector<int> lodex, lodey;
 };
 
-
-<<<<<<< HEAD
 #endif //libh
-=======
-#endif //libh
->>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
