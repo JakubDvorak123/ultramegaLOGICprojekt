@@ -1,5 +1,6 @@
 #include "Logic.hpp"
 #include "lib.h"
+<<<<<<< HEAD
 
 
 struct THEhra
@@ -43,6 +44,8 @@ void logicMain()
         {
             if(umistovani <= malaNUM)
 
+=======
+>>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
 using namespace std;
 
 void logicMain()
@@ -72,11 +75,14 @@ void logicMain()
             {
                 if(Vx + lode.malaLEN < Sx + 1)
                 {
+<<<<<<< HEAD
 
                     lode.pridejLOD(Vx, Vy, LOde::lod::mala);
                     lode.assignLOD(umistovani - 1);
                     umistovani++;
 
+=======
+>>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
                     if(dis.lodbarva[x][y] == 1)
                     {
                         display.at(x, y) = Rgb(100, 0, 0);
@@ -93,7 +99,10 @@ void logicMain()
                     {
                         display.at(x, y) = Rgb(100, 100, 0);
                     }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 7f18ef6963e944bb1472a5503d431541d1a61891
                 }
             }
             else if(umistovani <= malaNUM + velkaNUM)
