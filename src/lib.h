@@ -9,6 +9,10 @@ using namespace std;
 
 #define Sx 10
 #define Sy 10
+#define malaNUM 3
+#define velkaNUM 2
+#define ponorkaNUM 1
+#define kriznikNUM 1
 
 typedef unsigned short int USint;
 
@@ -64,7 +68,7 @@ public:
     int ponorkaLENx = 4;
     int ponorkaLENy = 2;
     int kriznikLENx = 4;
-    int kriznikLENy = 4;
+    int kriznikLENy = 2;
 
     bool PONORKA[2][4]
     {
@@ -85,6 +89,12 @@ public:
         lodex.push_back(x);
     }
     int GETlodeNUM( void ) const { return LodeProImplemntaci_NAdisplay.size(); }
+    void ResetLODE()
+    {
+        LodeProImplemntaci_NAdisplay.clear();
+        lodex.clear();
+        lodey.clear();
+    }
     bool assignLOD(int ID)
     {
         for(int y = 0; y < Sy; y++)
@@ -151,6 +161,8 @@ public:
         }
         return false;
     }
+
+    void Render();
 
 private:
     vector<int> LodeProImplemntaci_NAdisplay;
