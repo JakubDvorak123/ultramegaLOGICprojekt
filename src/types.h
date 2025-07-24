@@ -1,3 +1,4 @@
+#pragma once
 #include <string>
 #include <esp_netif_ip_addr.h>
 
