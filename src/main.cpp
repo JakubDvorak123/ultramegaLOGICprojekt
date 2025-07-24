@@ -1,5 +1,11 @@
 #include "Logic.hpp"
 #include "lib.h"
+#include "types.h"
+#include "networking.hpp"
+
+void handleReceiveData(game_state_t data){
+    //TODO: Implement the logic to handle received data
+};
 
 struct THEhra
 {
@@ -14,10 +20,19 @@ struct THEhra
         neprijeti,
     };  
     int LocalniStav = cekani;
-};
+    };
 
 void logicMain()
 {
+    try{
+        main_data maindata = pair_esp();
+        xTaskCreate([](void* param) {
+                setReceiveData(&handleReceiveData);
+            }, "receive_task", 4096, NULL, 5, NULL);
+        }
+    catch (const std::exception& e) {
+        std::cerr << "Error occurred: " << e.what() << std::endl;
+    }
     //int lodeNUM = 3;
     LOde lode;
     THEhra h;    

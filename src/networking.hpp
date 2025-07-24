@@ -14,6 +14,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "freertos/event_groups.h"
+#include "types.h"
 
 #define WIFI_SSID "ChataULesa"
 #define WIFI_PASS "ulesa529"
@@ -34,23 +35,6 @@ static bool is_master = false;
 static bool connection_established = false;
 // Forward declarations
 static void listening_task(void *pvParameters);
-
-struct main_data
-{
-    esp_ip4_addr_t s_ip_addr;  // Lokální IP adresa
-    esp_ip4_addr_t enemy_ip_addr;  // IP adresa partnera
-    bool is_master;  // true pokud jsme master, false pokud jsme slave
-};
-
-
-// Struktura pro zpravy mezi zarizeni
-typedef struct {
-    char device_name[32];
-    char device_type[16];
-    uint32_t ip_address;
-    uint32_t uptime_ms;
-    bool is_response;  // true pokud je to odpoved na discovery
-} device_info_t;
 
 // Task pro initial discovery - posle 5 broadcast zprav a ceka na odpoved
 static void initial_discovery_task(void *pvParameters)
@@ -239,8 +223,7 @@ static void start_device_discovery(void)
     printf("Initial discovery task spusten\n");
 }
 
-static void event_handler(void *arg, esp_event_base_t event_base,
-                          int32_t event_id, void *event_data)
+static void event_handler(void *arg, esp_event_base_t event_base, int32_t event_id, void *event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START)
     {
@@ -367,4 +350,87 @@ main_data pair_esp()
     data.is_master = is_master;
 
     return data;
+}
+
+bool sendData(struct game_state_t data) {
+    if (!connection_established) {
+        printf("Spojeni neni navazano, nemohu odeslat data\n");
+        return false;
+    }
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        printf("Nelze vytvorit socket pro odesilani dat\n");
+        return false;
+    }
+
+    struct sockaddr_in dest_addr;
+    dest_addr.sin_family = AF_INET;
+    dest_addr.sin_port = htons(BROADCAST_PORT + 1); // Use same port as setReceiveData
+    dest_addr.sin_addr.s_addr = enemy_ip_addr.addr;
+
+    int err = sendto(sock, &data, sizeof(data), 0, 
+                    (struct sockaddr *)&dest_addr, sizeof(dest_addr));
+    close(sock);
+
+    if (err < 0) {
+        printf("Chyba pri odesilani dat\n");
+        return false;
+    }
+    
+    printf("Herni data odeslana partnerovi\n");
+    return true;
+}
+
+void setReceiveData(void (*dataCallback)(game_state_t)) {
+    if (!connection_established) {
+        printf("Spojeni neni navazano, nemohu prijmout data\n");
+        return;
+    }
+
+    if (!dataCallback) {
+        printf("Callback funkce neni definovana\n");
+        return;
+    }
+
+    int sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_IP);
+    if (sock < 0) {
+        printf("Nelze vytvorit socket pro prijem dat\n");
+        return;
+    }
+
+    struct sockaddr_in listen_addr;
+    listen_addr.sin_family = AF_INET;
+    listen_addr.sin_port = htons(BROADCAST_PORT + 1); // Use different port for game data
+    listen_addr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+    if (bind(sock, (struct sockaddr *)&listen_addr, sizeof(listen_addr)) < 0) {
+        printf("Chyba pri bindovani socketu pro prijem dat\n");
+        close(sock);
+        return;
+    }
+
+    printf("Nasloucham hernim datam na portu %d\n", BROADCAST_PORT + 1);
+
+    while (connection_established) {
+        game_state_t data;
+        struct sockaddr_in source_addr;
+        socklen_t addr_len = sizeof(source_addr);
+        
+        int len = recvfrom(sock, &data, sizeof(data), 0, (struct sockaddr *)&source_addr, &addr_len);
+        
+        if (len > 0) {
+            // Check if data is from our partner
+            if (source_addr.sin_addr.s_addr == enemy_ip_addr.addr) {
+                printf("Prijata herni data od partnera\n");
+                dataCallback(data);
+            }
+        } else if (len < 0) {
+            printf("Chyba pri prijmu dat, pokracuji v naslouchani\n");
+            vTaskDelay(pdMS_TO_TICKS(100)); // Small delay before retry
+        }
+    }
+    
+    close(sock);
+    printf("Ukoncuji naslouchani hernim datam\n");
 }
