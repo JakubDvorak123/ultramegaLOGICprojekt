@@ -14,6 +14,7 @@ using namespace std;
 #define ponorkaNUM 1
 #define kriznikNUM 1
 
+
 typedef unsigned short int USint;
 
 struct vec2
@@ -69,6 +70,7 @@ public:
     int ponorkaLENy = 2;
     int kriznikLENx = 4;
     int kriznikLENy = 2;
+    int kriznikLENy = 4;
 
     bool PONORKA[2][4]
     {

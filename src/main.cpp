@@ -1,6 +1,7 @@
 #include "Logic.hpp"
 #include "lib.h"
 
+
 struct THEhra
 {
     enum Hrastav
@@ -41,12 +42,58 @@ void logicMain()
         if(buttons.read(R_Enter) == true && enter == false) 
         {
             if(umistovani <= malaNUM)
+
+using namespace std;
+
+void logicMain()
+ {
+    //int lodeNUM = 3;
+    LOde lode;
+
+    lode.pridejLOD(1, 2, LOde::lod::mala);
+    lode.pridejLOD(5, 2, LOde::lod::mala);
+    lode.pridejLOD(5, 4, LOde::lod::velka);
+    lode.pridejLOD(3, 6, LOde::lod::ponorka);
+    lode.pridejLOD(6, 8, LOde::lod::kriznik);
+
+    cout << "lode num>>" << lode.GETlodeNUM() << endl;
+
+    for (int i = 0 ; i < lode.GETlodeNUM(); i++)
+    {
+        lode.assignLOD(i);
+    }
+
+    while(true)
+    {
+        for(int y = 0; y < Sy; y++)
+        {
+            for(int x = 0; x < Sx; x++)
+
             {
                 if(Vx + lode.malaLEN < Sx + 1)
                 {
+
                     lode.pridejLOD(Vx, Vy, LOde::lod::mala);
                     lode.assignLOD(umistovani - 1);
                     umistovani++;
+
+                    if(dis.lodbarva[x][y] == 1)
+                    {
+                        display.at(x, y) = Rgb(100, 0, 0);
+                    }
+                    if(dis.lodbarva[x][y] == 2)
+                    {
+                        display.at(x, y) = Rgb(0, 100, 0);
+                    }
+                    if(dis.lodbarva[x][y] == 3)
+                    {
+                        display.at(x, y) = Rgb(0, 0, 100);
+                    }
+                    if(dis.lodbarva[x][y] == 4)
+                    {
+                        display.at(x, y) = Rgb(100, 100, 0);
+                    }
+
                 }
             }
             else if(umistovani <= malaNUM + velkaNUM)
