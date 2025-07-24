@@ -24,7 +24,8 @@ struct THEhra
 
 void logicMain()
 {
-    try{
+    // Temporarily disabled networking for single-board testing
+    /*try{
         main_data maindata = pair_esp();
         xTaskCreate([](void* param) {
                 setReceiveData(&handleReceiveData);
@@ -32,17 +33,12 @@ void logicMain()
         }
     catch (const std::exception& e) {
         std::cerr << "Error occurred: " << e.what() << std::endl;
-    }
-    //int lodeNUM = 3;
+    }*/
+    
     LOde lode;
     THEhra h;    
-    /**
-     * propojovani, po propojeni THEhra.LocalniStav = umistovani, jinak cekani;
-     */
-    while(h.LocalniStav == THEhra::cekani)
-    {
-        h.LocalniStav = THEhra::umistovani;
-    }
+    // Skip waiting state and go directly to ship placement
+    h.LocalniStav = THEhra::umistovani;
     
     int Vx = 0, Vy = 0;
     int umistovani = 1;
@@ -57,13 +53,16 @@ void logicMain()
         {
             if(umistovani <= malaNUM)
             {
-                lode.pridejLOD(Vx, Vy, LOde::lod::mala);
-                lode.assignLOD(umistovani - 1);
-                umistovani++;
+                if (Vx + lode.malaLEN <= Sx && lode.isValidPlacement(Vx, Vy, LOde::lod::mala))
+                {
+                    lode.pridejLOD(Vx, Vy, LOde::lod::mala);
+                    lode.assignLOD(umistovani - 1);
+                    umistovani++;
+                }
             }
             else if(umistovani <= malaNUM + velkaNUM)
             {
-                if(Vx + lode.velkaLEN < Sx + 1)
+                if(Vx + lode.velkaLEN < Sx + 1 && lode.isValidPlacement(Vx, Vy, LOde::lod::velka))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::velka);
                     lode.assignLOD(umistovani - 1);
@@ -72,7 +71,8 @@ void logicMain()
             }
             else if(umistovani <= malaNUM + velkaNUM + ponorkaNUM)
             {
-                if(Vx + lode.ponorkaLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1)
+                if(Vx + lode.ponorkaLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1 &&
+                   lode.isValidPlacement(Vx, Vy, LOde::lod::ponorka))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::ponorka);
                     lode.assignLOD(umistovani - 1);
@@ -82,7 +82,8 @@ void logicMain()
             }
             else if(umistovani <= malaNUM + velkaNUM + ponorkaNUM + kriznikNUM)
             {
-                if(Vx + lode.kriznikLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1)
+                if(Vx + lode.kriznikLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1 &&
+                   lode.isValidPlacement(Vx, Vy, LOde::lod::kriznik))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::kriznik);
                     lode.assignLOD(umistovani - 1);
