@@ -82,7 +82,7 @@ void logicMain()
             }
             else if(umistovani <= malaNUM + velkaNUM + ponorkaNUM + kriznikNUM)
             {
-                if(Vx + lode.kriznikLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1 &&
+                if(Vx + lode.kriznikLENx < Sx + 1 && Vy + lode.kriznikLENy < Sy + 1 &&
                    lode.isValidPlacement(Vx, Vy, LOde::lod::kriznik))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::kriznik);
