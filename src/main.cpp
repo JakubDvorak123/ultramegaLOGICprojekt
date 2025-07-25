@@ -309,13 +309,19 @@ void logicMain()
             gameOver.game_over = true;
             strcpy(gameOver.message, "You lose!");
             sendData(gameOver);
+            statusBar.setColor(Rgb(0, 255, 0));
+            statusBar.setState(5);
+            statusBar.show(10);
             
             printf("You win! Game over.\n");
             h.LocalniStav = THEhra::konec;
         }
-        if (enemy_hits >= 10) {
+        if (enemy_hits >= 26){
             printf("You lose! Game over.\n");
             h.LocalniStav = THEhra::konec;
+            statusBar.setColor(Rgb(255, 0, 0));
+            statusBar.setState(5);
+            statusBar.show(10);
         }
     }
 
@@ -327,10 +333,6 @@ void logicMain()
             display.at(i, i) = Rgb(255, 255, 0); // Yellow diagonal
             display.at(9-i, i) = Rgb(255, 255, 0);
         }
-        display.show(10);
-        delay(500);
-        
-        display.clear();
         display.show(10);
         delay(500);
     }
