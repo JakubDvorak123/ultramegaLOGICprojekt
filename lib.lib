@@ -64,7 +64,7 @@ public:
     int ponorkaLENx = 4;
     int ponorkaLENy = 2;
     int kriznikLENx = 4;
-    int kriznikLENy = 4;
+    int kriznikLENy = 2;
 
     bool PONORKA[2][4]
     {

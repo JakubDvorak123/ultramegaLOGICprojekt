@@ -19,7 +19,11 @@ typedef struct {
 
 struct game_state_t
 {
-    char foo[64];  // Fixed-size buffer instead of std::string
-    char bar[64];  // Fixed-size buffer instead of std::string
-    int score;
+    char action[32];     // "shoot", "hit", "miss", "ready", "game_over"
+    int target_x;        // Target coordinates for shooting
+    int target_y;
+    int score;           // Player score
+    bool is_hit;         // Was the shot a hit?
+    bool game_over;      // Is the game finished?
+    char message[64];    // Additional game message
 };

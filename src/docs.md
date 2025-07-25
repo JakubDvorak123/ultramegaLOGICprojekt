@@ -299,3 +299,54 @@ Required ESP-IDF components:
 
 Tested on Logic board:
 - None :D, Thoughts and prayers 🙏
+
+---
+
+# Battleship Game - Free-for-All Mode Updates
+
+## Changes Made
+
+### 1. Removed Turn-Based System
+- Eliminated `my_turn` variable and all turn-based logic
+- Players can now shoot anytime without waiting for their turn
+- True free-for-all gameplay
+
+### 2. Dual-Screen System
+The game now has two distinct screens that can be switched between:
+
+#### Screen 1: Own Ships View (Green indicators)
+- Shows your ship placement
+- Shows where enemy has hit your ships (red pixels for hits)
+- Visual indicator: Green pixels in top-left corner (0,0), (1,0), (0,1)
+
+#### Screen 2: Enemy Targeting View (Red indicators)  
+- Shows where you have shot on enemy grid
+- Gray pixels = missed shots
+- Red pixels = successful hits
+- White cursor for targeting new shots
+- Visual indicator: Red pixels in top-right corner (9,0), (8,0), (9,1)
+
+### 3. Controls
+- **L_Enter**: Switch between the two screens
+- **R_Arrow keys**: Move targeting cursor (only active on enemy targeting screen)
+- **R_Enter**: Shoot at cursor position (free-for-all, no waiting for turns)
+
+### 4. Ship Definition Fix
+- Fixed inconsistency in `kriznikLENy` (was 4 in lib.lib, corrected to 2)
+
+## Game Flow
+1. Ship placement phase (unchanged)
+2. Networking/pairing phase (unchanged)
+3. **Free-for-all battle phase** (changed):
+   - Start on own ships screen
+   - Use L_Enter to switch to enemy targeting screen
+   - Move cursor and shoot freely without turn restrictions
+   - Switch back to own ships screen to see incoming damage
+4. End game phase (unchanged)
+
+## Technical Details
+- Removed all references to `my_turn` variable
+- Added `show_own_ships` boolean to track current screen
+- Improved visual feedback with corner pixel indicators
+- Maintained networking compatibility for shot exchange
+- Added debouncing for screen switching to prevent rapid toggling

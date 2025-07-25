@@ -16,8 +16,8 @@
 #include "freertos/event_groups.h"
 #include "types.h"
 
-#define WIFI_SSID "ChataULesa"
-#define WIFI_PASS "ulesa529"
+#define WIFI_SSID "RedmiNote13"
+#define WIFI_PASS "playrix100"
 #define WIFI_MAXIMUM_RETRY 5
 #define BROADCAST_PORT 3333
 
