@@ -2,9 +2,11 @@
 #include "lib.h"
 #include "types.h"
 #include "networking.hpp"
+#include <cstring>
 
 void handleReceiveData(game_state_t data){
-    printf("Received data: foo=%s, bar=%s, score=%d\n", data.foo.c_str(), data.bar.c_str(), data.score);
+    printf("Received data: foo=%s, bar=%s, score=%d\n", data.foo, data.bar, data.score);
+    printf("toto byli data\n");
 };
 
 struct THEhra
@@ -35,7 +37,11 @@ void logicMain()
     {
         if (maindata.is_master)
         {
-            sendData({ "Hello", "World", 42 });
+            game_state_t gameData;
+            strcpy(gameData.foo, "Hello");
+            strcpy(gameData.bar, "World");
+            gameData.score = 42;
+            sendData(gameData);
         }
         else
         {
