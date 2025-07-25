@@ -299,7 +299,7 @@ void logicMain()
         delay(50);
         
         // Check for game over conditions
-        if (my_hits >= 10) { // Assuming 10 hits to win
+        if (my_hits >= 26) { // Assuming 10 hits to win
             game_state_t gameOver;
             strcpy(gameOver.action, "game_over");
             gameOver.target_x = 0;
