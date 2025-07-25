@@ -4,7 +4,7 @@
 #include "networking.hpp"
 
 void handleReceiveData(game_state_t data){
-    //TODO: Implement the logic to handle received data
+    printf("Received data: foo=%s, bar=%s, score=%d\n", data.foo.c_str(), data.bar.c_str(), data.score);
 };
 
 struct THEhra
@@ -25,15 +25,27 @@ struct THEhra
 void logicMain()
 {
     // Temporarily disabled networking for single-board testing
-    try {
-        main_data maindata = pair_esp();
-        xTaskCreate([](void* param) {
-                setReceiveData(&handleReceiveData);
-            }, "receive_task", 4096, NULL, 5, NULL);
+    main_data maindata;
+    maindata = pair_esp();
+    xTaskCreate([](void* param) {
+            setReceiveData(&handleReceiveData);
+    }, "receive_task", 4096, NULL, 5, NULL);
+
+    while (true)
+    {
+        if (maindata.is_master)
+        {
+            sendData({ "Hello", "World", 42 });
         }
-    catch (const std::exception& e) {
-        std::cerr << "Error occurred: " << e.what() << std::endl;
+        else
+        {
+            // Slave logic can be implemented here if needed
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay to prevent busy-waiting
     }
+    
+
+    
     
     LOde lode;
     THEhra h;    
