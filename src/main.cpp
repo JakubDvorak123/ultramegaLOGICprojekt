@@ -3,6 +3,7 @@
 #include "types.h"
 #include "networking.hpp"
 #include <cstring>
+#include <StatusBar.hpp>
 
 // Global game state variables
 static bool game_active = false;
@@ -68,7 +69,6 @@ struct THEhra
 
 void logicMain()
 {
-    // Temporarily disabled networking for single-board testing
     main_data maindata;
     maindata = pair_esp();
     xTaskCreate([](void* param) {
@@ -224,10 +224,10 @@ void logicMain()
             // Shows your ships and where enemy has hit you
             lode.Render();
             
-            // Add visual indicator: green corner pixels for "own ships" screen
-            display.at(0, 0) = Rgb(0, 255, 0);
-            display.at(1, 0) = Rgb(0, 255, 0);
-            display.at(0, 1) = Rgb(0, 255, 0);
+            // Add visual indicator: green status bar for "own ships" screen
+            statusBar.setColor(Rgb(0, 255, 0));
+            statusBar.setState(5);
+            statusBar.show(10);
         } else {
             // SCREEN 2: Enemy Targeting View  
             // Shows where you have shot and allows you to target new shots
@@ -289,10 +289,10 @@ void logicMain()
                 display.at(cursor_x, cursor_y) = Rgb(255, 255, 255); // White cursor
             }
             
-            // Add visual indicator: red corner pixels for "enemy targeting" screen
-            display.at(9, 0) = Rgb(255, 0, 0);
-            display.at(8, 0) = Rgb(255, 0, 0);
-            display.at(9, 1) = Rgb(255, 0, 0);
+            // Add visual indicator: red status bar for "enemy targeting" screen
+            statusBar.setColor(Rgb(255, 0, 0));
+            statusBar.setState(5);
+            statusBar.show(10);
         }
 
         display.show(10);
