@@ -204,9 +204,6 @@ void logicMain()
         // Clear display
         display.clear();
         
-        // Render our ships
-        lode.Render();
-        
         // Show enemy grid if it's our turn
         if (my_turn) {
             // Show cursor for targeting
@@ -215,25 +212,25 @@ void logicMain()
             }
             
             // Handle movement controls for targeting
-            if(buttons.read(L_Right) && cursor_x + 1 < Sx) { 
+            if(buttons.read(R_Right) && cursor_x + 1 < Sx) { 
                 cursor_x++; 
                 vTaskDelay(pdMS_TO_TICKS(200)); // Debounce
             }
-            if(buttons.read(L_Left) && cursor_x > 0) { 
+            if(buttons.read(R_Left) && cursor_x > 0) { 
                 cursor_x--; 
                 vTaskDelay(pdMS_TO_TICKS(200)); // Debounce
             }
-            if(buttons.read(L_Up) && cursor_y > 0) { 
+            if(buttons.read(R_Up) && cursor_y > 0) { 
                 cursor_y--; 
                 vTaskDelay(pdMS_TO_TICKS(200)); // Debounce
             }
-            if(buttons.read(L_Down) && cursor_y + 1 < Sy) { 
+            if(buttons.read(R_Down) && cursor_y + 1 < Sy) { 
                 cursor_y++; 
                 vTaskDelay(pdMS_TO_TICKS(200)); // Debounce
             }
             
             // Handle shooting
-            if(buttons.read(L_Enter) && !shoot_pressed) {
+            if(buttons.read(R_Enter) && !shoot_pressed) {
                 if (enemy_grid[cursor_x][cursor_y] == 0) { // Haven't shot here yet
                     // Send shot to opponent
                     game_state_t shot;
@@ -251,17 +248,23 @@ void logicMain()
                 }
                 shoot_pressed = true;
             }
-            if(!buttons.read(L_Enter)) {
+            if(!buttons.read(R_Enter)) {
                 shoot_pressed = false;
             }
             
-            // Display enemy grid status
-            for(int y = 0; y < Sy; y++) {
-                for(int x = 0; x < Sx; x++) {
-                    if (enemy_grid[x][y] == 1) {
-                        display.at(x, y) = Rgb(50, 50, 50); // Miss - gray
-                    } else if (enemy_grid[x][y] == 2) {
-                        display.at(x, y) = Rgb(255, 0, 0); // Hit - red
+            if(buttons.read(L_Enter)) {
+                // Render our ships
+                lode.Render();
+            }
+            else {
+                // Display enemy grid status
+                for(int y = 0; y < Sy; y++) {
+                    for(int x = 0; x < Sx; x++) {
+                        if (enemy_grid[x][y] == 1) {
+                            display.at(x, y) = Rgb(50, 50, 50); // Miss - gray
+                        } else if (enemy_grid[x][y] == 2) {
+                            display.at(x, y) = Rgb(255, 0, 0); // Hit - red
+                        }
                     }
                 }
             }
