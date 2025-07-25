@@ -98,38 +98,38 @@ public:
         if (typ == lod::mala) {
             // Check 2x1 ship
             for (int i = 0; i < malaLEN; i++) {
-                if (dis.policka[x + i][y] == DIsplay::stav::plna) {
+                if (x + i >= 0 && x + i < Sx && dis.policka[x + i][y] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i + 1][y] == DIsplay::stav::plna) {
+                if (x + i + 1 >= 0 && x + i + 1 < Sx && dis.policka[x + i + 1][y] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i - 1][y] == DIsplay::stav::plna) {
+                if (x + i - 1 >= 0 && x + i - 1 < Sx && dis.policka[x + i - 1][y] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i][y + 1] == DIsplay::stav::plna) {
+                if (y + 1 >= 0 && y + 1 < Sy && dis.policka[x + i][y + 1] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i][y - 1] == DIsplay::stav::plna) {
+                if (y - 1 >= 0 && y - 1 < Sy && dis.policka[x + i][y - 1] == DIsplay::stav::plna) {
                     return false;
                 }
             }
         } else if (typ == lod::velka) {
             // Check 4x1 ship
             for (int i = 0; i < velkaLEN; i++) {
-                if (dis.policka[x + i][y] == DIsplay::stav::plna) {
+                if (x + i >= 0 && x + i < Sx && dis.policka[x + i][y] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i + 1][y] == DIsplay::stav::plna) {
+                if (x + i + 1 >= 0 && x + i + 1 < Sx && dis.policka[x + i + 1][y] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i - 1][y] == DIsplay::stav::plna) {
+                if (x + i - 1 >= 0 && x + i - 1 < Sx && dis.policka[x + i - 1][y] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i][y + 1] == DIsplay::stav::plna) {
+                if (y + 1 >= 0 && y + 1 < Sy && dis.policka[x + i][y + 1] == DIsplay::stav::plna) {
                     return false;
                 }
-                if (dis.policka[x + i][y - 1] == DIsplay::stav::plna) {
+                if (y - 1 >= 0 && y - 1 < Sy && dis.policka[x + i][y - 1] == DIsplay::stav::plna) {
                     return false;
                 }
             }
