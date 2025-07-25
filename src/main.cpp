@@ -5,7 +5,6 @@
 #include <cstring>
 
 // Global game state variables
-static bool my_turn = false;
 static bool game_active = false;
 static bool opponent_ready = false;
 static int enemy_grid[10][10] = {0}; // 0=unknown, 1=miss, 2=hit
@@ -13,6 +12,7 @@ static int my_hits = 0;
 static int enemy_hits = 0;
 static game_state_t incoming_shot = {}; // Store incoming shot
 static bool shot_received = false;
+static bool show_own_ships = true; // true = show own ships, false = show enemy targeting grid
 
 // Function to check if a shot hits our ships
 bool checkHit(int x, int y, LOde& lode) {
@@ -43,7 +43,7 @@ void handleReceiveData(game_state_t data){
         } else {
             printf("Miss!\n");
         }
-        my_turn = true; // Continue our turn if we hit, or opponent's turn if we missed
+        // No turn management - free for all gameplay
     }
     else if (strcmp(data.action, "game_over") == 0) {
         printf("Game Over! %s\n", data.message);
@@ -164,12 +164,13 @@ void logicMain()
         vTaskDelay(pdMS_TO_TICKS(100));
     }
     
-    printf("Both players ready! Starting game...\n");
+    printf("Both players ready! Starting free-for-all game...\n");
     game_active = true;
-    my_turn = maindata.is_master; // Master goes first
+    // No turn assignment - free for all gameplay
     
     int cursor_x = 0, cursor_y = 0;
     bool shoot_pressed = false;
+    bool switch_screen_pressed = false;
 
     while(h.LocalniStav == THEhra::hra && game_active)
     {
@@ -197,19 +198,33 @@ void logicMain()
                 printf("Enemy missed at (%d,%d)\n", incoming_shot.target_x, incoming_shot.target_y);
             }
             
-            my_turn = true; // It's now our turn
+            // No turn management - free for all gameplay
             shot_received = false;
         }
         
         // Clear display
         display.clear();
         
-        // Show enemy grid if it's our turn
-        if (my_turn) {
-            // Show cursor for targeting
-            if (cursor_x >= 0 && cursor_x < Sx && cursor_y >= 0 && cursor_y < Sy) {
-                display.at(cursor_x, cursor_y) = Rgb(255, 255, 255); // White cursor
-            }
+        // Handle screen switching with L_Enter button
+        if(buttons.read(L_Enter) && !switch_screen_pressed) {
+            show_own_ships = !show_own_ships;
+            printf("Switched to %s screen\n", show_own_ships ? "own ships" : "enemy targeting");
+            switch_screen_pressed = true;
+        }
+        if(!buttons.read(L_Enter)) {
+            switch_screen_pressed = false;
+        }
+        
+        if (show_own_ships) {
+            // Screen 1: Show our ships and where we've been hit
+            lode.Render();
+            
+            // Add visual indicator: green corner pixels for "own ships" screen
+            display.at(0, 0) = Rgb(0, 255, 0);
+            display.at(1, 0) = Rgb(0, 255, 0);
+            display.at(0, 1) = Rgb(0, 255, 0);
+        } else {
+            // Screen 2: Show enemy targeting grid with cursor for shooting
             
             // Handle movement controls for targeting
             if(buttons.read(R_Right) && cursor_x + 1 < Sx) { 
@@ -229,7 +244,7 @@ void logicMain()
                 vTaskDelay(pdMS_TO_TICKS(200)); // Debounce
             }
             
-            // Handle shooting
+            // Handle shooting - can shoot anytime in free-for-all mode
             if(buttons.read(R_Enter) && !shoot_pressed) {
                 if (enemy_grid[cursor_x][cursor_y] == 0) { // Haven't shot here yet
                     // Send shot to opponent
@@ -244,7 +259,7 @@ void logicMain()
                     sendData(shot);
                     
                     printf("Shot fired at (%d,%d)\n", cursor_x, cursor_y);
-                    my_turn = false; // Wait for response
+                    // No turn management - can continue shooting immediately
                 }
                 shoot_pressed = true;
             }
@@ -252,32 +267,26 @@ void logicMain()
                 shoot_pressed = false;
             }
             
-            if(buttons.read(L_Enter)) {
-                // Render our ships
-                lode.Render();
-            }
-            else {
-                // Display enemy grid status
-                for(int y = 0; y < Sy; y++) {
-                    for(int x = 0; x < Sx; x++) {
-                        if (enemy_grid[x][y] == 1) {
-                            display.at(x, y) = Rgb(50, 50, 50); // Miss - gray
-                        } else if (enemy_grid[x][y] == 2) {
-                            display.at(x, y) = Rgb(255, 0, 0); // Hit - red
-                        }
+            // Display enemy grid status
+            for(int y = 0; y < Sy; y++) {
+                for(int x = 0; x < Sx; x++) {
+                    if (enemy_grid[x][y] == 1) {
+                        display.at(x, y) = Rgb(50, 50, 50); // Miss - gray
+                    } else if (enemy_grid[x][y] == 2) {
+                        display.at(x, y) = Rgb(255, 0, 0); // Hit - red
                     }
                 }
             }
-        } else {
-            // Not our turn - show waiting message by blinking display
-            static int blink_counter = 0;
-            blink_counter++;
-            if ((blink_counter / 10) % 2 == 0) {
-                display.at(4, 4) = Rgb(0, 0, 255); // Blue waiting indicator
-                display.at(5, 4) = Rgb(0, 0, 255);
-                display.at(4, 5) = Rgb(0, 0, 255);
-                display.at(5, 5) = Rgb(0, 0, 255);
+            
+            // Show cursor for targeting
+            if (cursor_x >= 0 && cursor_x < Sx && cursor_y >= 0 && cursor_y < Sy) {
+                display.at(cursor_x, cursor_y) = Rgb(255, 255, 255); // White cursor
             }
+            
+            // Add visual indicator: red corner pixels for "enemy targeting" screen
+            display.at(9, 0) = Rgb(255, 0, 0);
+            display.at(8, 0) = Rgb(255, 0, 0);
+            display.at(9, 1) = Rgb(255, 0, 0);
         }
 
         display.show(10);
