@@ -434,3 +434,16 @@ void setReceiveData(void (*dataCallback)(game_state_t)) {
     close(sock);
     printf("Ukoncuji naslouchani hernim datam\n");
 }
+
+char* serializeIntVector(const std::vector<int>& vec) {
+    size_t size = vec.size();
+    char* buffer = new char[size * sizeof(int)];
+    memcpy(buffer, vec.data(), size * sizeof(int));
+    return buffer;
+}
+
+std::vector<int> deserializeIntVector(const char* buffer, size_t size) {
+    std::vector<int> vec(size / sizeof(int));
+    memcpy(vec.data(), buffer, size);
+    return vec;
+}
