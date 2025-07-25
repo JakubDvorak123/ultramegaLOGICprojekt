@@ -94,6 +94,91 @@ public:
         lodex.clear();
         lodey.clear();
     }
+    bool isValidPlacement(int x, int y, int typ) const {
+        if (typ == lod::mala) {
+            // Check 2x1 ship
+            for (int i = 0; i < malaLEN; i++) {
+                if (x + i >= 0 && x + i < Sx && dis.policka[x + i][y] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (x + i + 1 >= 0 && x + i + 1 < Sx && dis.policka[x + i + 1][y] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (x + i - 1 >= 0 && x + i - 1 < Sx && dis.policka[x + i - 1][y] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (y + 1 >= 0 && y + 1 < Sy && dis.policka[x + i][y + 1] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (y - 1 >= 0 && y - 1 < Sy && dis.policka[x + i][y - 1] == DIsplay::stav::plna) {
+                    return false;
+                }
+            }
+        } else if (typ == lod::velka) {
+            // Check 4x1 ship
+            for (int i = 0; i < velkaLEN; i++) {
+                if (x + i >= 0 && x + i < Sx && dis.policka[x + i][y] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (x + i + 1 >= 0 && x + i + 1 < Sx && dis.policka[x + i + 1][y] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (x + i - 1 >= 0 && x + i - 1 < Sx && dis.policka[x + i - 1][y] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (y + 1 >= 0 && y + 1 < Sy && dis.policka[x + i][y + 1] == DIsplay::stav::plna) {
+                    return false;
+                }
+                if (y - 1 >= 0 && y - 1 < Sy && dis.policka[x + i][y - 1] == DIsplay::stav::plna) {
+                    return false;
+                }
+            }
+        } else if (typ == lod::ponorka) {
+            // Check 4x2 submarine
+            for (int dy = 0; dy < 2; dy++) {
+                for (int dx = 0; dx < ponorkaLENx; dx++) {
+                    if (PONORKA[dy][dx] && dis.policka[x + dx][y + dy] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (PONORKA[dy][dx] && dis.policka[x + dx + 1][y + dy] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (PONORKA[dy][dx] && dis.policka[x + dx - 1][y + dy] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (PONORKA[dy][dx] && dis.policka[x + dx][y + dy + 1] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (PONORKA[dy][dx] && dis.policka[x + dx][y + dy - 1] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                }
+            }
+        } else if (typ == lod::kriznik) {
+            // Check 4x2 cruiser
+            for (int dy = 0; dy < 2; dy++) {
+                for (int dx = 0; dx < kriznikLENx; dx++) {
+                    if (KRIZNIK[dy][dx] && dis.policka[x + dx][y + dy] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (KRIZNIK[dy][dx] && dis.policka[x + dx + 1][y + dy] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (KRIZNIK[dy][dx] && dis.policka[x + dx - 1][y + dy] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (KRIZNIK[dy][dx] && dis.policka[x + dx][y + dy + 1] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                    if (KRIZNIK[dy][dx] && dis.policka[x + dx][y + dy - 1] == DIsplay::stav::plna) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
+    }
+
     bool assignLOD(int ID)
     {
         for(int y = 0; y < Sy; y++)

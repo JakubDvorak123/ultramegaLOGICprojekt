@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include <esp_netif_ip_addr.h>
 
 struct main_data
@@ -20,7 +19,7 @@ typedef struct {
 
 struct game_state_t
 {
-    std::string foo;
-    std::string bar;
+    char foo[64];  // Fixed-size buffer instead of std::string
+    char bar[64];  // Fixed-size buffer instead of std::string
     int score;
 };

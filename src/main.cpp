@@ -2,9 +2,11 @@
 #include "lib.h"
 #include "types.h"
 #include "networking.hpp"
+#include <cstring>
 
 void handleReceiveData(game_state_t data){
-    //TODO: Implement the logic to handle received data
+    printf("Received data: foo=%s, bar=%s, score=%d\n", data.foo, data.bar, data.score);
+    printf("toto byli data\n");
 };
 
 struct THEhra
@@ -24,25 +26,37 @@ struct THEhra
 
 void logicMain()
 {
-    try{
-        main_data maindata = pair_esp();
-        xTaskCreate([](void* param) {
-                setReceiveData(&handleReceiveData);
-            }, "receive_task", 4096, NULL, 5, NULL);
+    // Temporarily disabled networking for single-board testing
+    main_data maindata;
+    maindata = pair_esp();
+    xTaskCreate([](void* param) {
+            setReceiveData(&handleReceiveData);
+    }, "receive_task", 4096, NULL, 5, NULL);
+
+    while (true)
+    {
+        if (maindata.is_master)
+        {
+            game_state_t gameData;
+            strcpy(gameData.foo, "Hello");
+            strcpy(gameData.bar, "World");
+            gameData.score = 42;
+            sendData(gameData);
         }
-    catch (const std::exception& e) {
-        std::cerr << "Error occurred: " << e.what() << std::endl;
+        else
+        {
+            // Slave logic can be implemented here if needed
+        }
+        vTaskDelay(pdMS_TO_TICKS(1000)); // Delay to prevent busy-waiting
     }
-    //int lodeNUM = 3;
+    
+
+    
+    
     LOde lode;
     THEhra h;    
-    /**
-     * propojovani, po propojeni THEhra.LocalniStav = umistovani, jinak cekani;
-     */
-    while(h.LocalniStav == THEhra::cekani)
-    {
-        h.LocalniStav = THEhra::umistovani;
-    }
+    // Skip waiting state and go directly to ship placement
+    h.LocalniStav = THEhra::umistovani;
     
     int Vx = 0, Vy = 0;
     int umistovani = 1;
@@ -57,13 +71,16 @@ void logicMain()
         {
             if(umistovani <= malaNUM)
             {
-                lode.pridejLOD(Vx, Vy, LOde::lod::mala);
-                lode.assignLOD(umistovani - 1);
-                umistovani++;
+                if (Vx + lode.malaLEN <= Sx && lode.isValidPlacement(Vx, Vy, LOde::lod::mala))
+                {
+                    lode.pridejLOD(Vx, Vy, LOde::lod::mala);
+                    lode.assignLOD(umistovani - 1);
+                    umistovani++;
+                }
             }
             else if(umistovani <= malaNUM + velkaNUM)
             {
-                if(Vx + lode.velkaLEN < Sx + 1)
+                if(Vx + lode.velkaLEN < Sx + 1 && lode.isValidPlacement(Vx, Vy, LOde::lod::velka))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::velka);
                     lode.assignLOD(umistovani - 1);
@@ -72,7 +89,8 @@ void logicMain()
             }
             else if(umistovani <= malaNUM + velkaNUM + ponorkaNUM)
             {
-                if(Vx + lode.ponorkaLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1)
+                if(Vx + lode.ponorkaLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1 &&
+                   lode.isValidPlacement(Vx, Vy, LOde::lod::ponorka))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::ponorka);
                     lode.assignLOD(umistovani - 1);
@@ -82,7 +100,8 @@ void logicMain()
             }
             else if(umistovani <= malaNUM + velkaNUM + ponorkaNUM + kriznikNUM)
             {
-                if(Vx + lode.kriznikLENx < Sx + 1 && Vy + lode.ponorkaLENy < Sy + 1)
+                if(Vx + lode.kriznikLENx < Sx + 1 && Vy + lode.kriznikLENy < Sy + 1 &&
+                   lode.isValidPlacement(Vx, Vy, LOde::lod::kriznik))
                 {
                     lode.pridejLOD(Vx, Vy, LOde::lod::kriznik);
                     lode.assignLOD(umistovani - 1);
