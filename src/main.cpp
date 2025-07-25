@@ -25,7 +25,7 @@ struct THEhra
 void logicMain()
 {
     // Temporarily disabled networking for single-board testing
-    /*try{
+    try {
         main_data maindata = pair_esp();
         xTaskCreate([](void* param) {
                 setReceiveData(&handleReceiveData);
@@ -33,7 +33,7 @@ void logicMain()
         }
     catch (const std::exception& e) {
         std::cerr << "Error occurred: " << e.what() << std::endl;
-    }*/
+    }
     
     LOde lode;
     THEhra h;    
