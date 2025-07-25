@@ -165,6 +165,10 @@ void logicMain()
     }
     
     printf("Both players ready! Starting free-for-all game...\n");
+    printf("Game controls:\n");
+    printf("- L_Enter: Switch between own ships view and enemy targeting view\n");
+    printf("- R_Arrow keys: Move cursor (on enemy targeting screen)\n");
+    printf("- R_Enter: Shoot at cursor position (free-for-all, no turns)\n");
     game_active = true;
     // No turn assignment - free for all gameplay
     
@@ -216,7 +220,8 @@ void logicMain()
         }
         
         if (show_own_ships) {
-            // Screen 1: Show our ships and where we've been hit
+            // SCREEN 1: Own Ships View
+            // Shows your ships and where enemy has hit you
             lode.Render();
             
             // Add visual indicator: green corner pixels for "own ships" screen
@@ -224,7 +229,8 @@ void logicMain()
             display.at(1, 0) = Rgb(0, 255, 0);
             display.at(0, 1) = Rgb(0, 255, 0);
         } else {
-            // Screen 2: Show enemy targeting grid with cursor for shooting
+            // SCREEN 2: Enemy Targeting View  
+            // Shows where you have shot and allows you to target new shots
             
             // Handle movement controls for targeting
             if(buttons.read(R_Right) && cursor_x + 1 < Sx) { 
