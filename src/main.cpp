@@ -352,7 +352,7 @@ void LOde::Render()
                 // Normal ship colors
                 if(dis.lodbarva[x][y] == 1)
                 {
-                    display.at(x, y) = Rgb(100, 0, 0);
+                    display.at(x, y) = Rgb(100, 0, 100);
                 }
                 else if(dis.lodbarva[x][y] == 2)
                 {
